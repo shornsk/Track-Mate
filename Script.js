@@ -1,32 +1,26 @@
-// MQTT connection configuration
-const broker = "broker.hivemq.com";
-const port = 8000;
-const topic = "sensor/health";
+client.on("message", (topic, message) => {
+  const data = JSON.parse(message.toString());
+  const time = new Date().toLocaleTimeString();
 
-// Connect to the MQTT broker
-const client = new Paho.MQTT.Client(broker, port, "TrackMateClient");
+  // Update sensor values on the webpage
+  document.getElementById("heartRate").innerText = data.heartRate;
+  document.getElementById("spo2").innerText = data.spo2;
+  document.getElementById("temperature").innerText = data.temperature;
 
-// Called when the client connects
-client.onConnectionLost = (responseObject) => {
-  console.error("Connection lost:", responseObject.errorMessage);
-};
+  // Add data to the chart
+  healthChart.data.labels.push(time);
+  healthChart.data.datasets[0].data.push(data.heartRate);
+  healthChart.data.datasets[1].data.push(data.spo2);
 
-client.onMessageArrived = (message) => {
-  console.log("Message arrived:", message.payloadString);
+  // Add temperature to chart (optional: create a separate dataset for it)
+  // If you want temperature in a separate graph, create a second chart
 
-  // Parse the JSON payload
-  const data = JSON.parse(message.payloadString);
-  document.getElementById("heartRate").textContent = `Heart Rate: ${data.heartRate}`;
-  document.getElementById("spo2").textContent = `SpO2: ${data.spo2}`;
-};
+  // Keep the chart limited to 10 data points
+  if (healthChart.data.labels.length > 10) {
+    healthChart.data.labels.shift();
+    healthChart.data.datasets[0].data.shift();
+    healthChart.data.datasets[1].data.shift();
+  }
 
-// Connect to the MQTT broker
-client.connect({
-  onSuccess: () => {
-    console.log("Connected to broker");
-    client.subscribe(topic); // Subscribe to the topic
-  },
-  onFailure: (error) => {
-    console.error("Connection failed:", error);
-  },
+  healthChart.update();
 });
