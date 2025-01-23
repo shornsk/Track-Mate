@@ -22,7 +22,7 @@
 <body>
   <h1>TrackMate: Live Sensor Data</h1>
   <h2 id="status">Connecting to MQTT Broker...</h2>
-<h3>Temperature: <span id="temperature">--</span> °C</h3>
+  <h3>Temperature: <span id="temperature">--</span> °C</h3>
   <h3>Heart Rate: <span id="heartRate">--</span> bpm</h3>
   <h3>SpO2: <span id="spo2">--</span> %</h3>
 
@@ -50,6 +50,12 @@
           {
             label: "SpO2 (%)",
             borderColor: "blue",
+            data: [],
+            fill: false,
+          },
+          {
+            label: "Temperature (°C)",
+            borderColor: "green",
             data: [],
             fill: false,
           },
@@ -81,19 +87,22 @@
       const time = new Date().toLocaleTimeString();
 
       // Update sensor values on the webpage
+      document.getElementById("temperature").innerText = data.temperature;
       document.getElementById("heartRate").innerText = data.heartRate;
       document.getElementById("spo2").innerText = data.spo2;
 
       // Add data to the chart
       healthChart.data.labels.push(time);
-      healthChart.data.datasets[0].data.push(data.heartRate);
-      healthChart.data.datasets[1].data.push(data.spo2);
+      healthChart.data.datasets[0].data.push(data.heartRate); // Heart Rate
+      healthChart.data.datasets[1].data.push(data.spo2);      // SpO2
+      healthChart.data.datasets[2].data.push(data.temperature); // Temperature
 
       // Keep the chart limited to 10 data points
       if (healthChart.data.labels.length > 10) {
         healthChart.data.labels.shift();
         healthChart.data.datasets[0].data.shift();
         healthChart.data.datasets[1].data.shift();
+        healthChart.data.datasets[2].data.shift();
       }
 
       healthChart.update();
@@ -106,4 +115,3 @@
   </script>
 </body>
 </html>
-
