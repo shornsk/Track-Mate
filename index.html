@@ -12,22 +12,47 @@
       text-align: center;
       margin: 0;
       padding: 0;
+      background-color: #f4f4f9;
     }
+
+    h1 {
+      margin-top: 20px;
+      color: #333;
+    }
+
+    h2 {
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    h3 {
+      margin: 10px 0;
+      font-size: 1.2rem;
+    }
+
     canvas {
       max-width: 90%;
       margin: 20px auto;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
     }
   </style>
 </head>
 <body>
+  <!-- Title Section -->
   <h1>TrackMate: Live Sensor Data</h1>
   <h2 id="status">Connecting to MQTT Broker...</h2>
+
+  <!-- Live Data Section -->
   <h3>Temperature: <span id="temperature">--</span> °C</h3>
   <h3>Heart Rate: <span id="heartRate">--</span> bpm</h3>
   <h3>SpO2: <span id="spo2">--</span> %</h3>
 
+  <!-- Health Data Chart -->
   <canvas id="healthChart"></canvas>
 
+  <!-- JavaScript for MQTT and Chart Updates -->
   <script>
     // MQTT connection details
     const broker = "broker.hivemq.com"; // Public MQTT broker
@@ -73,6 +98,7 @@
     // Connect to MQTT broker
     const client = mqtt.connect(`wss://${broker}:${port}/mqtt`);
 
+    // MQTT Connection Handlers
     client.on("connect", () => {
       document.getElementById("status").innerText = "Connected to MQTT Broker";
       client.subscribe(topic, (err) => {
@@ -83,29 +109,34 @@
     });
 
     client.on("message", (topic, message) => {
-      const data = JSON.parse(message.toString());
-      const time = new Date().toLocaleTimeString();
+      try {
+        // Parse incoming data
+        const data = JSON.parse(message.toString());
+        const time = new Date().toLocaleTimeString();
 
-      // Update sensor values on the webpage
-      document.getElementById("temperature").innerText = data.temperature;
-      document.getElementById("heartRate").innerText = data.heartRate;
-      document.getElementById("spo2").innerText = data.spo2;
+        // Update sensor values on the webpage
+        document.getElementById("temperature").innerText = data.temperature || "--";
+        document.getElementById("heartRate").innerText = data.heartRate || "--";
+        document.getElementById("spo2").innerText = data.spo2 || "--";
 
-      // Add data to the chart
-      healthChart.data.labels.push(time);
-      healthChart.data.datasets[0].data.push(data.heartRate); // Heart Rate
-      healthChart.data.datasets[1].data.push(data.spo2);      // SpO2
-      healthChart.data.datasets[2].data.push(data.temperature); // Temperature
+        // Add data to the chart
+        healthChart.data.labels.push(time);
+        healthChart.data.datasets[0].data.push(data.heartRate || null);
+        healthChart.data.datasets[1].data.push(data.spo2 || null);
+        healthChart.data.datasets[2].data.push(data.temperature || null);
 
-      // Keep the chart limited to 10 data points
-      if (healthChart.data.labels.length > 10) {
-        healthChart.data.labels.shift();
-        healthChart.data.datasets[0].data.shift();
-        healthChart.data.datasets[1].data.shift();
-        healthChart.data.datasets[2].data.shift();
+        // Keep the chart limited to 10 data points
+        if (healthChart.data.labels.length > 10) {
+          healthChart.data.labels.shift();
+          healthChart.data.datasets[0].data.shift();
+          healthChart.data.datasets[1].data.shift();
+          healthChart.data.datasets[2].data.shift();
+        }
+
+        healthChart.update();
+      } catch (err) {
+        console.error("Error processing message:", err);
       }
-
-      healthChart.update();
     });
 
     client.on("error", (error) => {
@@ -115,3 +146,4 @@
   </script>
 </body>
 </html>
+  
